@@ -1,26 +1,59 @@
-import sys
+import sys, ctypes
 import mysql.connector
-from PyQt5.QtWidgets import QDialog, QApplication, QComboBox, QFormLayout, QTextEdit, QGroupBox, QLabel, QVBoxLayout, QMenuBar, QMenu, QMessageBox
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QDialog, QApplication, QComboBox, QFormLayout, QTextEdit, QGroupBox, QLabel, QVBoxLayout, QMenuBar, QMenu, QMessageBox, QToolButton, QHBoxLayout, QFrame
+from PyQt5.QtGui import QFont, QIcon, QPalette
+from PyQt5.QtCore import Qt, QSize
 
 class AvailableSizes(QDialog):
     def __init__(self):
         super(AvailableSizes, self).__init__()
         
+        
         self.createCombos()
-        self.createMenuBar()
+        self.createHeader()
+        #self.createMenuBar()
         
         self.printOut = QTextEdit()
         self.printOut.setFont(QFont('Helvetica', 11, QFont.Bold))
         self.printOut.setReadOnly(True)
         
         mainLayout = QVBoxLayout()
-        mainLayout.setMenuBar(self.menuBar)
+        #mainLayout.setMenuBar(self.menuBar)
+        mainLayout.addWidget(self.frmHeader)
         mainLayout.addWidget(self.grpBox)
         mainLayout.addWidget(self.printOut)
+        #mainLayout.setAlignment(self.frmHeader, Qt.AlignRight)
         self.setLayout(mainLayout)
         
-        self.setWindowTitle("Available Sizes")
+        #self.setWindowTitle("Available Sizes")
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        bgColor = QPalette()
+        bgColor.setColor(self.backgroundRole(), Qt.gray)
+        self.setPalette(bgColor)
+        self.setWindowIcon(QIcon('icon/PS_Icon.png'))
+        self.cbSku.setFocus()
+        
+    def createHeader(self):
+        blk = QPalette()
+        blk.setColor(blk.Foreground, Qt.white)
+        
+        lblTitle = QLabel("Availability Checker")
+        lblTitle.setFont(QFont("Times", 12, QFont.Bold ))
+        lblTitle.setPalette(blk) 
+         
+        btnClose = QToolButton()
+        btnClose.setIcon(QIcon("icon\size_exit.png"))
+        btnClose.setAutoRaise(True)
+        btnClose.setIconSize(QSize(25,25))
+        btnClose.clicked.connect(lambda: self.close())
+        
+        hbHeader = QHBoxLayout()
+        hbHeader.addWidget(lblTitle)
+        hbHeader.addWidget(btnClose)
+        hbHeader.setContentsMargins(0, 0, 0, 0)
+        
+        self.frmHeader = QFrame()
+        self.frmHeader.setLayout(hbHeader)
         
     def createCombos(self):
         cbFont = QFont("Times", 8, QFont.Bold)
@@ -96,7 +129,7 @@ class AvailableSizes(QDialog):
                             garment_styles_ages g
                         JOIN packages p ON p.garment_styles_age_id = g.id
                         JOIN designs d ON d.id = p.design_id
-                        WHERE CONCAT(d.sku_code, " - ", d.name) = '""" + sku + """'
+                        WHERE d.sku_code = '""" + sku[:4] + """'
                         ORDER BY g.name""")
         ds = sd.fetchall()
         lsStyles = []
@@ -117,7 +150,7 @@ class AvailableSizes(QDialog):
                         JOIN colors c ON c.id = p.color_id
                         JOIN garment_styles_ages g ON g.id = p.garment_styles_age_id
                         WHERE 
-                            CONCAT(d.sku_code, " - ", d.name) = '""" + sku + """'
+                            d.sku_code = '""" + sku[:4] + """'
                         AND
                             g.name = '""" + style + """'""")
         ds = sd.fetchall()
@@ -125,6 +158,23 @@ class AvailableSizes(QDialog):
         for i in ds:
             lsSizes.append(i[0])
         return lsSizes
+
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.leftClick = True
+            self.offset = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if self.leftClick == True:
+            x=event.globalX()
+            y=event.globalY()
+            x_w = self.offset.x()
+            y_w = self.offset.y()
+            self.move(x-x_w, y-y_w)
+            
+    def mouseReleaseEvent(self, event):
+        self.leftClick = False       
     
 class mysql_db():
     def mysql_connect(self):
@@ -137,6 +187,9 @@ class mysql_db():
         return mysql_db.db        
         
 if __name__ == "__main__":
+    
+    myappid = 'Available Sizes' # arbitrary string
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid) 
     
     app = QApplication(sys.argv) 
     az = AvailableSizes()
