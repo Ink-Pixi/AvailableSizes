@@ -59,7 +59,7 @@ class AvailableSizes(QDialog):
         cbFont = QFont("Times", 8, QFont.Bold)
         designs = self.getDesigns()
         
-        self.grpBox = QGroupBox("Design")
+        self.grpBox = QGroupBox()
         self.grpBox.setFont(QFont('Times', 10, QFont.Bold))
         layout = QFormLayout()
         
