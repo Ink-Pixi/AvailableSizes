@@ -8,7 +8,6 @@ class AvailableSizes(QDialog):
     def __init__(self):
         super(AvailableSizes, self).__init__()
         
-        
         self.createCombos()
         self.createHeader()
         #self.createMenuBar()
